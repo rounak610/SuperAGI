@@ -9,7 +9,7 @@ import {
   getOrganisationConfig,
   getLlmModels,
   updateExecution,
-  uploadFile
+  uploadFile, getAgentDetails
 } from "@/pages/api/DashboardService";
 import {
   formatBytes,
@@ -34,7 +34,10 @@ export default function AgentCreate({
                                       template,
                                       internalId,
                                       sendKnowledgeData,
-                                      env
+                                      env,
+                                      edit,
+                                      editAgentId,
+                                      agents,
                                     }) {
   const [advancedOptions, setAdvancedOptions] = useState(false);
   const [agentName, setAgentName] = useState("");
@@ -109,6 +112,8 @@ export default function AgentCreate({
   const [createModal, setCreateModal] = useState(false);
 
   const [scheduleData, setScheduleData] = useState(null);
+  const [editModal, setEditModal] = useState(false)
+
 
   useEffect(() => {
     getOrganisationConfig(organisationId, "model_api_key")
@@ -156,24 +161,17 @@ export default function AgentCreate({
         console.error('Error fetching models:', error);
       });
 
-    if (template !== null) {
-      setLocalStorageValue("agent_name_" + String(internalId), template.name, setAgentName);
-      setLocalStorageValue("agent_description_" + String(internalId), template.description, setAgentDescription);
-      setLocalStorageValue("advanced_options_" + String(internalId), true, setAdvancedOptions);
-      setLocalStorageValue("agent_template_id_" + String(internalId), template.id, setAgentTemplateId);
+    if(edit) {
+      editingAgent();
+    }
 
+    if (template !== null) {
+      fillDetails(template)
+      setLocalStorageValue("agent_template_id_" + String(internalId), template.id, setAgentTemplateId);
       fetchAgentTemplateConfigLocal(template.id)
         .then((response) => {
           const data = response.data || [];
-          setLocalStorageArray("agent_goals_" + String(internalId), data.goal, setGoals);
-          setLocalStorageValue("agent_type_" + String(internalId), data.agent_type, setAgentType);
-          setLocalStorageArray("agent_constraints_" + String(internalId), data.constraints, setConstraints);
-          setLocalStorageValue("agent_iterations_" + String(internalId), data.max_iterations, setIterations);
-          setLocalStorageValue("agent_step_time_" + String(internalId), data.iteration_interval, setStepTime);
-          setLocalStorageValue("agent_permission_" + String(internalId), data.permission_type, setPermission);
-          setLocalStorageArray("agent_instructions_" + String(internalId), data.instruction, setInstructions);
-          setLocalStorageValue("agent_database_" + String(internalId), data.LTM_DB, setDatabase);
-          setLocalStorageValue("agent_model_" + String(internalId), data.model, setModel);
+          fillAdvancedDetails(data)
           setLocalStorageArray("tool_names_" + String(internalId), data.tools, setToolNames);
           setLocalStorageValue("is_agent_template_" + String(internalId), true, setShowButton);
           setShowButton(true);
@@ -770,12 +768,43 @@ export default function AgentCreate({
     localStorage.setItem('marketplace_tab', 'market_knowledge');
   }
 
+  const editingAgent = () => {
+    const agent = agents.find(agent => agent.id === editAgentId);
+    fillDetails(agent)
+    getAgentDetails(editAgentId)
+      .then((response) => {
+        const data = response.data || []
+        fillAdvancedDetails(data)
+        setLocalStorageArray("tool_names_" + String(internalId), data.tools.map(tool => tool.name), setToolNames);
+      })
+      .catch((error) => {
+        console.error('Error fetching agent details:', error);
+      });
+  };
+
+  const fillDetails = (agent) => {
+    setLocalStorageValue("agent_name_" + String(internalId), agent.name, setAgentName);
+    setLocalStorageValue("agent_description_" + String(internalId), agent.description, setAgentDescription);
+    setLocalStorageValue("advanced_options_" + String(internalId), true, setAdvancedOptions);
+  }
+  const fillAdvancedDetails = (data) => {
+    setLocalStorageArray("agent_goals_" + String(internalId), data.goal, setGoals);
+    setLocalStorageValue("agent_type_" + String(internalId), data.agent_type, setAgentType);
+    setLocalStorageArray("agent_constraints_" + String(internalId), data.constraints, setConstraints);
+    setLocalStorageValue("agent_iterations_" + String(internalId), data.max_iterations, setIterations);
+    setLocalStorageValue("agent_step_time_" + String(internalId), data.iteration_interval, setStepTime);
+    setLocalStorageValue("agent_permission_" + String(internalId), data.permission_type, setPermission);
+    setLocalStorageArray("agent_instructions_" + String(internalId), data.instruction, setInstructions);
+    setLocalStorageValue("agent_database_" + String(internalId), data.LTM_DB, setDatabase);
+    setLocalStorageValue("agent_model_" + String(internalId), data.model, setModel);
+  }
+
   return (<>
     <div className="row" style={{overflowY: 'scroll', height: 'calc(100vh - 92px)'}}>
       <div className="col-3"></div>
       <div className="col-6" style={{padding: '25px 20px'}}>
         <div>
-          <div className={styles.page_title}>Create new agent</div>
+          {!edit ? <div className={styles.page_title}>Create new agent</div> : <div className={styles.page_title}>Edit agent</div>}
         </div>
         <div style={{marginTop: '10px'}}>
           <div>
@@ -788,7 +817,7 @@ export default function AgentCreate({
           </div>
           <div style={{marginTop: '15px'}}>
             <div><label className={styles.form_label}>Goals</label></div>
-            {goals.map((goal, index) => (<div key={index} style={{
+            {goals?.map((goal, index) => (<div key={index} style={{
               marginBottom: '10px',
               display: 'flex',
               alignItems: 'center',
@@ -1201,7 +1230,7 @@ export default function AgentCreate({
                 Update Template
               </button>
             )}
-            <div style={{display: 'flex', position: 'relative'}}>
+            {!edit ? <div style={{display: 'flex', position: 'relative'}}>
               {createDropdown && (<div className="create_agent_dropdown_options" onClick={() => {setCreateModal(true);setCreateDropdown(false);}}>Create & Schedule Run
               </div>)}
               <div className="primary_button"
@@ -1215,12 +1244,33 @@ export default function AgentCreate({
                          alt="expand-icon"/>
                 </button>
               </div>
-            </div>
+            </div> :
+              <div className="primary_button" style={{backgroundColor: 'white', marginBottom: '4px', paddingLeft: '0', paddingRight: '5px'}}>
+              <button className="primary_button" style={{paddingRight: '5px'}}
+                      onClick={() => setEditModal(true)}>Update changes</button> </div>}
           </div>
 
           {createModal && (
             <AgentSchedule env={env} internalId={internalId} closeCreateModal={closeCreateModal} type="create_agent"/>
           )}
+
+          {editModal && (<div className="modal" onClick={() => setEditModal(!editModal)}>
+            <div className="modal-content" style={{width: '35%'}} onClick={preventDefault}>
+              <div className={styles.detail_name}>Update agent</div>
+              <div>
+                <label className={styles.form_label}>All the new runs of this agent will be updated with the latest changes. Are you sure you want to update changes?</label>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: '20px'}}>
+                <button className="secondary_button" style={{marginRight: '10px'}} onClick={() => setEditModal(false)}>
+                  Cancel
+                </button>
+                <button className={styles.run_button} style={{paddingLeft: '15px', paddingRight: '15px', height: '32px'}}
+                        >
+                  Update changes
+                </button>
+              </div>
+            </div>
+          </div>)}
 
         </div>
       </div>

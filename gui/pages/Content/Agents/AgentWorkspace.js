@@ -9,7 +9,7 @@ import RunHistory from "./RunHistory";
 import ActionConsole from "./ActionConsole";
 import Details from "./Details";
 import ResourceManager from "./ResourceManager";
-import {preventDefault} from "@/utils/utils";
+import {createInternalId, preventDefault} from "@/utils/utils";
 import {
   getAgentDetails,
   getAgentExecutions,
@@ -25,7 +25,7 @@ import {EventBus} from "@/utils/eventBus";
 import 'moment-timezone';
 import AgentSchedule from "@/pages/Content/Agents/AgentSchedule";
 
-export default function AgentWorkspace({env, agentId, agentName, selectedView, agents, internalId}) {
+export default function AgentWorkspace({env, agentId, agentName, selectedView, agents, internalId, sendAgentData}) {
   const [leftPanel, setLeftPanel] = useState('activity_feed')
   const [rightPanel, setRightPanel] = useState('')
   const [history, setHistory] = useState(true)
@@ -376,6 +376,12 @@ export default function AgentWorkspace({env, agentId, agentName, selectedView, a
                   {agent && !agent?.is_running && !agent?.is_scheduled &&
                     <li className="dropdown_item" onClick={() => {setDropdown(false);setCreateModal(true)}}>Schedule Run</li>}
                 </div>)}
+                <li className="dropdown_item" onClick={() => sendAgentData({
+                  id: agentId,
+                  name: "Edit Agent",
+                  contentType: "Edit_Agent",
+                  internalId: createInternalId()
+                })}>Edit Agent</li>
                 <li className="dropdown_item" onClick={() => {setDropdown(false);setDeleteModal(true)}}>Delete Agent</li>
               </ul>
             </div>}
