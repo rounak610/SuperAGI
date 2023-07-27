@@ -57,7 +57,7 @@ export default function Content({env, selectedView, selectedProjectId, organisat
       const response = await getAgents(selectedProjectId);
       const data = response.data || [];
       const updatedData = data.map(item => {
-        return { ...item, contentType: "Agents" };
+        return {...item, contentType: "Agents"};
       });
       setAgents(updatedData);
     } catch (error) {
@@ -80,7 +80,7 @@ export default function Content({env, selectedView, selectedProjectId, organisat
       const response = await getToolKit();
       const data = response.data || [];
       const updatedData = data.map(item => {
-        return { ...item, contentType: "Toolkits", isOpen: false, internalId: createInternalId() };
+        return {...item, contentType: "Toolkits", isOpen: false, internalId: createInternalId()};
       });
       setToolkits(updatedData);
     } catch (error) {
@@ -103,7 +103,7 @@ export default function Content({env, selectedView, selectedProjectId, organisat
       const response = await getKnowledge();
       const data = response.data || [];
       const updatedData = data.map(item => {
-        return { ...item, contentType: "Knowledge", internalId: createInternalId() };
+        return {...item, contentType: "Knowledge", internalId: createInternalId()};
       });
       setKnowledge(updatedData);
     } catch (error) {
@@ -418,7 +418,8 @@ export default function Content({env, selectedView, selectedProjectId, organisat
                       <AgentWorkspace internalId={tab.internalId || index} agentId={tab.id} agentName={tab.name} selectedView={selectedView}
                                       agents={agents} fetchAgents={getAgentList} sendAgentData={addTab} />}
                     {tab.contentType === 'Toolkits' &&
-                      <ToolkitWorkspace env={env} internalId={tab.internalId || index} toolkitDetails={toolkitDetails}/>}
+                      <ToolkitWorkspace env={env} internalId={tab.internalId || index}
+                                        toolkitDetails={toolkitDetails}/>}
                     {tab.contentType === 'Knowledge' &&
                       <KnowledgeDetails internalId={tab.internalId || index} knowledgeId={tab.id}/>}
                     {tab.contentType === 'Database' &&
