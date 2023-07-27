@@ -96,7 +96,7 @@ export default function Details({agentDetails, runCount, goals, instructions, ag
       <div className={styles.separator}></div>
       <div className={styles.agent_info_box}>
         <div><Image width={15} height={15} src="/images/flag.svg" alt="goals-icon"/></div>
-        <div style={info_text}>{agentDetails?.goal.length || 0} Goals</div>
+        <div style={info_text}>{goals.length || 0} Goals</div>
       </div>
       {goals && goals.length > 0 && <div>
         <div className={styles.large_text_box} style={!showGoals ? {overflow: 'hidden', display: '-webkit-box'} : {}}>
@@ -174,10 +174,10 @@ export default function Details({agentDetails, runCount, goals, instructions, ag
       {/*  <div><Image width={15} height={15} src="/images/cancel_presentation.svg" alt="exit-icon"/></div>*/}
       {/*  <div style={info_text}>{exit}</div>*/}
       {/*</div>*/}
-      <div className={styles.agent_info_box}>
-        <div><Image width={15} height={15} src="/images/overview.svg" alt="window-icon"/></div>
-        <div style={info_text}>{agentDetails?.memory_window || 0} milliseconds</div>
-      </div>
+      {/*<div className={styles.agent_info_box}>*/}
+      {/*  <div><Image width={15} height={15} src="/images/overview.svg" alt="window-icon"/></div>*/}
+      {/*  <div style={info_text}>{agentDetails?.memory_window || 0} milliseconds</div>*/}
+      {/*</div>*/}
       <div className={styles.agent_info_box}>
         <div><Image width={15} height={15} src="/images/key.svg" alt="permission-type-icon"/></div>
         <div style={info_text}>{agentDetails?.permission_type.replace(/\s*\([^)]*\)/g, '') || ''}</div>

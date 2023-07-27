@@ -380,18 +380,17 @@ export default function AgentWorkspace({env, agentId, agentName, selectedView, a
                       setCreateModal(true)
                     }}>Schedule Run</li>}
                 </div>)}
-                <li className="dropdown_item" onClick={() => {
-                  setDropdown(false);
-                  setDeleteModal(true)
-                }}>Delete Agent
-                </li>
                 <li className="dropdown_item" onClick={() => sendAgentData({
                   id: agentId,
                   name: "Edit Agent",
                   contentType: "Edit_Agent",
                   internalId: createInternalId()
                 })}>Edit Agent</li>
-                <li className="dropdown_item" onClick={() => {setDropdown(false);setDeleteModal(true)}}>Delete Agent</li>
+                <li className="dropdown_item" onClick={() => {
+                  setDropdown(false);
+                  setDeleteModal(true)
+                }}>Delete Agent
+                </li>
               </ul>
             </div>}
 
