@@ -209,13 +209,14 @@ export default function AgentWorkspace({env, agentId, agentName, selectedView, a
   };
 
   useEffect(() => {
-    fetchAgentDetails(agentId);
+    fetchAgentDetails(agentId, selectedRun?.id);
     fetchExecutions(agentId);
     fetchAgentScheduleComponent()
   }, [agentId])
 
   useEffect(() => {
     fetchExecutionDetails(selectedRun?.id);
+    fetchAgentDetails(agentId, selectedRun?.id);
   }, [selectedRun?.id])
 
   useEffect(() => {
@@ -224,8 +225,8 @@ export default function AgentWorkspace({env, agentId, agentName, selectedView, a
     }
   }, [agentDetails])
 
-  function fetchAgentDetails(agentId) {
-    getAgentDetails(agentId)
+  function fetchAgentDetails(agentId, runId) {
+    getAgentDetails(agentId, runId)
       .then((response) => {
         setAgentDetails(response.data);
       })
