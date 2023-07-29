@@ -771,7 +771,7 @@ export default function AgentCreate({
   const editingAgent = () => {
     const agent = agents.find(agent => agent.id === editAgentId);
     fillDetails(agent)
-    getAgentDetails(editAgentId)
+    getAgentDetails(editAgentId, -1)
       .then((response) => {
         const data = response.data || []
         fillAdvancedDetails(data)
