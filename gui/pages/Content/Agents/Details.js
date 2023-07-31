@@ -30,6 +30,9 @@ export default function Details({agentDetails, runCount, goals, instructions, ag
   useEffect(() => {
     setFilteredInstructions(instructions?.filter(instruction => instruction.trim() !== ''));
   }, [instructions]);
+  useEffect(() => {
+    console.log(agentDetails)
+  }, []);
 
   useEffect(() => {
     if (agent?.is_scheduled) {
@@ -180,7 +183,7 @@ export default function Details({agentDetails, runCount, goals, instructions, ag
       {/*</div>*/}
       <div className={styles.agent_info_box}>
         <div><Image width={15} height={15} src="/images/key.svg" alt="permission-type-icon"/></div>
-        <div style={info_text}>{agentDetails?.permission_type.replace(/\s*\([^)]*\)/g, '') || ''}</div>
+        <div style={info_text}>{agentDetails?.permission_type?.replace(/\s*\([^)]*\)/g, '') || ''}</div>
       </div>
       {agentDetails?.max_iterations && <div className={styles.agent_info_box}>
         <div><Image width={15} height={15} src="/images/info.svg" alt="info-icon"/></div>
