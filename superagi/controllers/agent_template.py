@@ -202,20 +202,21 @@ def edit_agent_template(agent_template_id: int,
 
 @router.post("/save_agent_as_template/agent_id/{agent_id}/agent_execution_id/{agent_execution_id}")
 def save_agent_as_template(agent_id: str,
-                           agent_execution_id: int,
+                           agent_execution_id: str,
                            organisation=Depends(get_user_organisation)):
     """
     Save an agent as a template.
 
     Args:
         agent_id (str): The ID of the agent to save as a template.
+        agent_execution_id (str): The ID of the agent execution to save as a template.
         organisation (Depends): Dependency to get the user organisation.
 
     Returns:
         dict: The saved agent template.
 
     Raises:
-        HTTPException (status_code=404): If the agent or agent configurations are not found.
+        HTTPException (status_code=404): If the agent or agent execution configurations are not found.
     """
 
     agent = db.session.query(Agent).filter(Agent.id == agent_id).first()
