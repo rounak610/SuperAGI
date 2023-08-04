@@ -402,20 +402,13 @@ def fetch_agent_config_from_template(agent_template_id: int,
         if config.key in main_keys:
             template_config_dict[config.key] = AgentTemplate.eval_agent_config(config.key, config.value)
             
-    for key in main_keys:
-        if key not in template_config_dict:
-            template_config_dict[key] = []
-
     if "instruction" not in template_config_dict:
         template_config_dict["instruction"] = []
-    template_config_dict["agent_template_id"] = agent_template.id
+    
+    for key in main_keys:
+        if key not in template_config_dict:
+            template_config_dict[key] = ""
 
-    knowledge_name = ""
-    if 'knowledge' in template_config_dict and template_config_dict['knowledge'] != 'None':
-        if type(template_config_dict['knowledge'])==int:
-            template_config_dict['knowledge'] = int(template_config_dict['knowledge'])
-        knowledge = db.session.query(Knowledges).filter(Knowledges.id == template_config_dict['knowledge']).first()
-        knowledge_name = knowledge.name if knowledge is not None else ""
-    template_config_dict['knowledge_name'] = knowledge_name 
+    template_config_dict["agent_template_id"] = agent_template.id
 
     return template_config_dict
