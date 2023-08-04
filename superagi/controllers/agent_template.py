@@ -9,6 +9,7 @@ from main import get_config
 from superagi.helper.auth import get_user_organisation
 from superagi.models.agent import Agent
 from superagi.models.agent_config import AgentConfiguration
+from superagi.models.agent_execution import AgentExecution
 from superagi.models.agent_execution_config import AgentExecutionConfiguration
 from superagi.models.agent_template import AgentTemplate
 from superagi.models.agent_template_config import AgentTemplateConfig
@@ -227,6 +228,14 @@ def save_agent_as_template(agent_id: str,
     if not agent_execution_configurations:
         raise HTTPException(status_code=404, detail="Agent configurations not found")
     
+    #Fetch agent id from agent execution id and check whether the agent_id received is correct or not.
+    agent_execution_config = AgentExecution.get_agent_execution_from_id(db.session, agent_execution_id)
+    if agent_execution_config is None:
+        raise HTTPException(status_code = 404, detail = "Agent Execution not found")
+    agent_id_from_execution_id = agent_execution_config.agent_id
+    if int(agent_id) != int(agent_id_from_execution_id):
+        raise HTTPException(status_code = 404, detail = "Wrong agent id")
+    
     agent_template = AgentTemplate(name=agent.name, description=agent.description,
                                    agent_workflow_id=agent.agent_workflow_id,
                                    organisation_id=organisation.id)
@@ -391,6 +400,11 @@ def fetch_agent_config_from_template(agent_template_id: int,
     for config in template_config:
         if config.key in main_keys:
             template_config_dict[config.key] = AgentTemplate.eval_agent_config(config.key, config.value)
+            
+    for key in main_keys:
+        if key not in template_config_dict:
+            template_config_dict[key] = []
+
     if "instruction" not in template_config_dict:
         template_config_dict["instruction"] = []
     template_config_dict["agent_template_id"] = agent_template.id
