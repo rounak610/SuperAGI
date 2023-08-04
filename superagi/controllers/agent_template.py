@@ -14,6 +14,7 @@ from superagi.models.agent_execution_config import AgentExecutionConfiguration
 from superagi.models.agent_template import AgentTemplate
 from superagi.models.agent_template_config import AgentTemplateConfig
 from superagi.models.agent_workflow import AgentWorkflow
+from superagi.models.knowledges import Knowledges
 from superagi.models.tool import Tool
 import json
 # from superagi.types.db import AgentTemplateIn, AgentTemplateOut
@@ -408,5 +409,13 @@ def fetch_agent_config_from_template(agent_template_id: int,
     if "instruction" not in template_config_dict:
         template_config_dict["instruction"] = []
     template_config_dict["agent_template_id"] = agent_template.id
+
+    knowledge_name = ""
+    if 'knowledge' in template_config_dict and template_config_dict['knowledge'] != 'None':
+        if type(template_config_dict['knowledge'])==int:
+            template_config_dict['knowledge'] = int(template_config_dict['knowledge'])
+        knowledge = db.session.query(Knowledges).filter(Knowledges.id == template_config_dict['knowledge']).first()
+        knowledge_name = knowledge.name if knowledge is not None else ""
+    template_config_dict['knowledge_name'] = knowledge_name 
 
     return template_config_dict
