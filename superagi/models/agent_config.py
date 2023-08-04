@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy import Column, Integer, Text, String
 from typing import Union
+from typing import Union
 
 from superagi.models.base_model import DBBaseModel
 from superagi.models.tool import Tool
@@ -33,13 +34,9 @@ class AgentConfiguration(DBBaseModel):
             str: String representation of the Agent Configuration.
 
         """
-        return f"AgentConfiguration(id={self.id}, key={self.key}, value={self.value})"
     
     @classmethod
     def update_agent_configurations_table(cls, session, agent_id: Union[int, None], updated_details: AgentRunIn):
-
-        if(type(agent_id)==None):
-            return -1;
 
         updated_details_dict = updated_details.dict()
 

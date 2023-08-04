@@ -5,6 +5,7 @@ import AddKnowledge from '../Content/Knowledge/AddKnowledge';
 import KnowledgeDetails from '../Content/Knowledge/KnowledgeDetails';
 import AgentWorkspace from '../Content/Agents/AgentWorkspace';
 import AgentCreate from '../Content/Agents/AgentCreate';
+import AgentCreate from '../Content/Agents/AgentCreate';
 import ToolkitWorkspace from '../Content/./Toolkits/ToolkitWorkspace';
 import Toolkits from '../Content/./Toolkits/Toolkits';
 import Settings from "./Settings/Settings";
@@ -80,7 +81,8 @@ export default function Content({env, selectedView, selectedProjectId, organisat
       const response = await getToolKit();
       const data = response.data || [];
       const updatedData = data.map(item => {
-        return {...item, contentType: "Toolkits", isOpen: false, internalId: createInternalId()};
+        let updatedName = item.name === "Web Scrapper Toolkit" ? "Web Scraper Toolkit" : item.name;
+        return {...item,name: updatedName,  contentType: "Toolkits", isOpen: false, internalId: createInternalId()};
       });
       setToolkits(updatedData);
     } catch (error) {
@@ -442,7 +444,7 @@ export default function Content({env, selectedView, selectedProjectId, organisat
                                           organisationId={organisationId} sendKnowledgeData={addTab}
                                           sendAgentData={addTab} selectedProjectId={selectedProjectId}
                                           fetchAgents={getAgentList} toolkits={toolkits} env={env} />}
-                    {isApmOpened && tab.contentType === 'APM' && <ApmDashboard key={prevView}/>}
+                    {tab.contentType === 'APM' && <ApmDashboard />}
                     {tab.contentType === 'Edit_Agent' &&
                         <AgentCreate knowledge={knowledge} internalId={tab.internalId || index}
                                      organisationId={organisationId} sendKnowledgeData={addTab}

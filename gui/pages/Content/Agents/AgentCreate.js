@@ -10,6 +10,7 @@ import {
   getLlmModels,
   updateExecution,
   uploadFile,
+  getAgentDetails, editAgent,
   getAgentDetails, editAgent
 } from "@/pages/api/DashboardService";
 import {
@@ -114,6 +115,7 @@ export default function AgentCreate({
 
   const [scheduleData, setScheduleData] = useState(null);
   const [editModal, setEditModal] = useState(false)
+
 
   useEffect(() => {
     getOrganisationConfig(organisationId, "model_api_key")
@@ -235,17 +237,23 @@ export default function AgentCreate({
   };
 
   const editingAgent = () => {
+    const isLoaded = localStorage.getItem('is_editing_agent_' + String(internalId));
     const agent = agents.find(agent => agent.id === editAgentId);
-    fillDetails(agent)
+    if (!isLoaded) {
+      fillDetails(agent)
+    }
     getAgentDetails(editAgentId, -1)
         .then((response) => {
           const data = response.data || []
-          fillAdvancedDetails(data)
-          setLocalStorageArray("tool_names_" + String(internalId), data.tools.map(tool => tool.name), setToolNames);
+          if (!isLoaded) {
+            fillAdvancedDetails(data)
+            setLocalStorageArray("tool_names_" + String(internalId), data.tools.map(tool => tool.name), setToolNames);
+          }
         })
         .catch((error) => {
           console.error('Error fetching agent details:', error);
         });
+    localStorage.setItem('is_editing_agent_' + String(internalId), true);
   };
 
   const fillDetails = (agent) => {
@@ -518,12 +526,34 @@ export default function AgentCreate({
     }
     else
       {
+        if(edit){
+      agentData.agent_id = editAgentId;
+      const name = agentData.name
+      agentData.name = `New Run ${new Date()}`
+      editAgent(agentData)
+        .then((response) => {
+        if(response){
+          fetchAgents();
+          uploadResources(editAgentId, name)
+        }
+      })
+    }
+    else
+      {
         createAgent(createModal ? scheduleAgentData : agentData, createModal)
-            .then((response) => {
-              const agentId = response.data.id;
-              const name = response.data.name;
-              const executionId = response.data.execution_id;
-              fetchAgents();
+                  .then((response) => {
+                    const agentId = response.data.id;
+                    const name = response.data.name;
+                    const executionId = response.data.execution_id;
+                    fetchAgents();
+              uploadResources(agentId, name, executionId)
+            })
+            .catch((error) => {
+              console.error('Error creating agent:', error);
+              setCreateClickable(true);
+            });
+      }
+  };
               uploadResources(agentId, name, executionId)
             })
             .catch((error) => {
@@ -1298,14 +1328,14 @@ export default function AgentCreate({
           )}
 
           {editModal && (<div className="modal" onClick={() => setEditModal(!editModal)}>
-            <div className="modal-content" style={{width: '35%'}} onClick={preventDefault}>
+            <div className="modal-content w_35" onClick={preventDefault}>
               <div className={styles.detail_name}>Update agent</div>
               <div><label className={styles.form_label}>All the new runs of this agent will be updated with the latest changes. Are you sure you want to update changes?</label></div>
-              <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: '20px'}}>
-                <button className="secondary_button" style={{marginRight: '10px'}} onClick={() => setEditModal(false)}>
+              <div className="mt_20 justify_end display_flex">
+                <button className="secondary_button mr_10" onClick={() => setEditModal(false)}>
                   Cancel
                 </button>
-                <button className={styles.run_button} style={{paddingLeft: '15px', paddingRight: '15px', height: '32px'}} onClick={handleAddAgent}>
+                <button className={`${styles.run_button} h_32p padding_0_15 `} onClick={handleAddAgent}>
                   Update changes
                 </button>
               </div>

@@ -4,6 +4,10 @@ export const getOrganisation = (userId) => {
   return api.get(`/organisations/get/user/${userId}`);
 };
 
+export const getGithubClientId = () => {
+  return api.get(`/get/github_client_id`);
+};
+
 export const addUser = (userData) => {
   return api.post(`/users/add`, userData);
 };
@@ -120,8 +124,8 @@ export const fetchAgentTemplateListLocal = () => {
   return api.get('/agent_templates/list?template_source=local');
 };
 
-export const saveAgentAsTemplate = (agentId) => {
-  return api.post(`/agent_templates/save_agent_as_template/${agentId}`);
+export const saveAgentAsTemplate = (agentId, executionId) => {
+  return api.post(`/agent_templates/save_agent_as_template/agent_id/${agentId}/agent_execution_id/${executionId}`);
 };
 
 export const fetchAgentTemplateConfig = (templateId) => {
@@ -172,8 +176,16 @@ export const fetchToolTemplateOverview = (toolTemplateName) => {
   return api.get(`/toolkits/marketplace/readme/${toolTemplateName}`);
 };
 
+export const updateMarketplaceToolTemplate = (templateName) => {
+  return api.put(`/toolkits/update/${templateName}`);
+};
+
 export const installToolkitTemplate = (templateName) => {
   return api.get(`/toolkits/get/install/${templateName}`);
+};
+
+export const checkToolkitUpdate = (templateName) => {
+  return api.get(`/toolkits/check_update/${templateName}`);
 };
 
 export const getExecutionDetails = (executionId, agentId) => {
