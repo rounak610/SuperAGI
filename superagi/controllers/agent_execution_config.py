@@ -17,7 +17,7 @@ from superagi.models.agent_execution_config import AgentExecutionConfiguration
 router = APIRouter()
 
 
-@router.get("/details/agent/{agent_id}/agent_execution/{agent_execution_id}")
+@router.get("/details/agent_id/{agent_id}/agent_execution_id/{agent_execution_id}")
 def get_agent_execution_configuration(agent_id : int,
                                       agent_execution_id: Optional[Union[int, None]] = None,
                                       Authorize: AuthJWT = Depends(check_auth)):
