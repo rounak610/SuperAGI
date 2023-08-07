@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, Text, String
 from typing import Union
 
 from superagi.config.config import get_config
+from superagi.controllers.types.agent_execution_config import AgentRunIn
 from superagi.helper.encyption_helper import decrypt_data
 from superagi.models.base_model import DBBaseModel
 from superagi.models.configuration import Configuration
