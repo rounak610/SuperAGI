@@ -405,6 +405,9 @@ def fetch_agent_config_from_template(agent_template_id: int,
     if "instruction" not in template_config_dict:
         template_config_dict["instruction"] = []
     
+    if "contraints" not in template_config_dict:
+        template_config_dict["constraints"] = []
+    
     for key in main_keys:
         if key not in template_config_dict:
             template_config_dict[key] = ""
