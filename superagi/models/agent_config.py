@@ -39,29 +39,49 @@ class AgentConfiguration(DBBaseModel):
         return f"AgentConfiguration(id={self.id}, key={self.key}, value={self.value})"
 
     @classmethod
-    def get_model_api_key(cls, session, agent_id: int, model: str):
-        """
-        Get the model API key from the agent id.
+    def update_agent_configurations_table(cls, session, agent_id: Union[int, None], updated_details: AgentRunIn):
 
-        Args:
-            session (Session): The database session
-            agent_id (int): The agent identifier
-            model (str): The model name
+        updated_details_dict = updated_details.dict()
 
-        Returns:
-            str: The model API key.
-        """
-        config_model_source = Configuration.fetch_value_by_agent_id(session, agent_id,
-                                                                    "model_source") or "OpenAi"
-        selected_model_source = ModelSourceType.get_model_source_from_model(model)
-        if selected_model_source.value == config_model_source:
-            config_value = Configuration.fetch_value_by_agent_id(session, agent_id, "model_api_key")
-            model_api_key = decrypt_data(config_value)
-            return model_api_key
+        # Fetch existing 'toolkits' agent configuration for the given agent_id
+        agent_toolkits_config = session.query(AgentConfiguration).filter(
+            AgentConfiguration.agent_id == agent_id,
+            AgentConfiguration.key == 'toolkits'
+        ).first()
 
-        if selected_model_source == ModelSourceType.GooglePalm:
-            return get_config("PALM_API_KEY")
+        if agent_toolkits_config:
+            agent_toolkits_config.value = updated_details_dict['toolkits']
+        else:
+            agent_toolkits_config = AgentConfiguration(
+                agent_id=agent_id,
+                key='toolkits',
+                value=updated_details_dict['toolkits']
+            )
+            session.add(agent_toolkits_config)
+        
+        #Fetch existing knowledge for the given agent id and update it accordingly
+        knowledge_config = session.query(AgentConfiguration).filter(
+            AgentConfiguration.agent_id == agent_id,
+            AgentConfiguration.key == 'knowledge'
+        ).first()
 
-        if selected_model_source == ModelSourceType.Replicate:
-            return get_config("REPLICATE_API_TOKEN")
-        return get_config("OPENAI_API_KEY")
+        if knowledge_config:
+            knowledge_config.value = updated_details_dict['knowledge']
+        else:
+            knowledge_config = AgentConfiguration(
+                agent_id=agent_id,
+                key='knowledge',
+                value=updated_details_dict['knowledge']
+            )
+            session.add(knowledge_config)
+            
+        # Fetch agent configurations
+        agent_configs = session.query(AgentConfiguration).filter(AgentConfiguration.agent_id == agent_id).all()
+        for agent_config in agent_configs:
+            if agent_config.key in updated_details_dict:
+                agent_config.value = updated_details_dict[agent_config.key]
+
+        # Commit the changes to the database
+        session.commit()
+
+        return "Details updated successfully"

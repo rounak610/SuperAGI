@@ -31,18 +31,42 @@ def get_agent_execution_configuration(agent_id : int,
     Raises:
         HTTPException (status_code=404): If the agent is not found.
     """
-    if agent_execution_id > 0:
-        agent_execution_config = db.session.query(AgentExecutionConfiguration).filter(
-            AgentExecutionConfiguration.agent_execution_id == agent_execution_id
-        ).all()
-        if agent_execution_config:
-            return {result.key: eval(result.value) for result in agent_execution_config}
 
-        agent_execution = db.session.query(AgentExecution).filter(AgentExecution.id == agent_execution_id).first()
-        if not agent_execution:
-            raise HTTPException(status_code=404, detail="Agent Configuration not found")
-    keys_to_fetch = ["goal", "instruction"]
-    agent_configuration = db.session.query(AgentConfiguration).filter(AgentConfiguration.key.in_(keys_to_fetch),
-                                                                      AgentConfiguration.agent_id == agent_id).all()
+    # Check
+    if isinstance(agent_id, str):
+        raise HTTPException(status_code = 404, detail = "Agent Id undefined")
+    if isinstance(agent_execution_id, str):
+        raise HTTPException(status_code = 404, detail = "Agent Execution Id undefined")
 
-    return {result.key: ast.literal_eval(result.value) for result in agent_configuration}
+    # Define the agent_config keys to fetch
+    agent = db.session.query(Agent).filter(agent_id == Agent.id,or_(Agent.is_deleted == False)).first()
+    if not agent:
+        raise HTTPException(status_code = 404, detail = "Agent not found")
+    
+    #If the agent_execution_id received is -1 then the agent_execution_id is set as the most recent execution
+    if agent_execution_id == -1:
+        agent_execution_id = db.session.query(AgentExecution).filter(AgentExecution.agent_id == agent_id).order_by(desc(AgentExecution.created_at)).first().id
+
+    #Fetch agent id from agent execution id and check whether the agent_id received is correct or not.
+    agent_execution_config = AgentExecution.get_agent_execution_from_id(db.session, agent_execution_id)
+    if agent_execution_config is None:
+        raise HTTPException(status_code = 404, detail = "Agent Execution not found")
+    agent_id_from_execution_id = agent_execution_config.agent_id
+    if agent_id != agent_id_from_execution_id:
+        raise HTTPException(status_code = 404, detail = "Wrong agent id")
+
+    # Query the AgentConfiguration table and the AgentExecuitonConfiguration table for all the keys
+    results_agent = db.session.query(AgentConfiguration).filter(AgentConfiguration.agent_id == agent_id).all()
+    results_agent_execution = db.session.query(AgentExecutionConfiguration).filter(AgentExecutionConfiguration.agent_execution_id == agent_execution_id).all()
+    
+    total_calls = db.session.query(func.sum(AgentExecution.num_of_calls)).filter(
+        AgentExecution.agent_id == agent_id).scalar()
+    total_tokens = db.session.query(func.sum(AgentExecution.num_of_tokens)).filter(
+        AgentExecution.agent_id == agent_id).scalar()
+    
+    response = AgentExecutionConfiguration.fetch_details_api(db.session, agent, results_agent, results_agent_execution, total_calls, total_tokens)
+
+    # Close the session
+    db.session.close()
+
+    return response
