@@ -6,7 +6,10 @@ from fastapi_jwt_auth import AuthJWT
 from fastapi_sqlalchemy import db
 from typing import Optional, Union
 
+from sqlalchemy import desc, func, or_
+
 from superagi.helper.auth import check_auth
+from superagi.models.agent import Agent
 from superagi.models.agent_config import AgentConfiguration
 from superagi.models.agent_execution import AgentExecution
 from superagi.models.agent_execution_config import AgentExecutionConfiguration
