@@ -222,7 +222,6 @@ export default function AgentWorkspace({env, agentId, agentName, selectedView, a
     if (agentDetails) {
       setRightPanel(agentDetails.permission_type.includes('RESTRICTED') ? 'action_console' : 'details');
     }
-    console.log(agentDetails)
   }, [agentDetails])
 
   function fetchAgentDetails(agentId) {
@@ -274,7 +273,7 @@ export default function AgentWorkspace({env, agentId, agentName, selectedView, a
   }
 
   function saveAgentTemplate() {
-    saveAgentAsTemplate(agentId)
+    saveAgentAsTemplate(agentId, selectedRun?.id)
       .then((response) => {
         toast.success("Agent saved as template successfully", {autoClose: 1800});
       })

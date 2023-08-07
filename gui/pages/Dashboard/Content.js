@@ -443,6 +443,11 @@ export default function Content({env, selectedView, selectedProjectId, organisat
                                           sendAgentData={addTab} selectedProjectId={selectedProjectId}
                                           fetchAgents={getAgentList} toolkits={toolkits} env={env} />}
                     {tab.contentType === 'APM' && <ApmDashboard />}
+                    {tab.contentType === 'Edit_Agent' &&
+                        <AgentCreate knowledge={knowledge} internalId={tab.internalId || index}
+                                     organisationId={organisationId} sendKnowledgeData={addTab}
+                                     sendAgentData={addTab} selectedProjectId={selectedProjectId} editAgentId={tab.id}
+                                     fetchAgents={getAgentList} toolkits={toolkits} template={null} edit={true} agents={agents}/>}
                   </div>}
                 </div>
               ))}
