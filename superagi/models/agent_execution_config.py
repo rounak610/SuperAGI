@@ -117,9 +117,10 @@ class AgentExecutionConfiguration(DBBaseModel):
             if key in results_agent_dict and value is not None:
                 results_agent_dict[key] = value
 
+        print(results_agent_dict)
         # Construct the response
         if 'goal' in results_agent_dict:
-            results_agent_dict['goal'] = eval(results_agent_dict['goal'])
+            results_agent_dict['goal'] = ast.literal_eval(results_agent_dict['goal'])
 
         if "toolkits" in results_agent_dict:
             results_agent_dict["toolkits"] = list(ast.literal_eval(results_agent_dict["toolkits"]))

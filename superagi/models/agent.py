@@ -174,6 +174,7 @@ class Agent(DBBaseModel):
             for key, value in agent_config_values.items()
         ]
 
+
         db.session.add_all(agent_configurations)
         db.session.commit()
         db.session.flush()
