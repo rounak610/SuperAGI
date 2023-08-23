@@ -1,12 +1,14 @@
 from datetime import datetime
 
 from fastapi import APIRouter
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Query
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
 
 from main import get_config
+from superagi.controllers.types.agent_execution_config import AgentRunIn
 from superagi.helper.auth import get_user_organisation
+from superagi.helper.auth import get_current_user
 from superagi.models.agent import Agent
 from superagi.models.agent_config import AgentConfiguration
 from superagi.models.agent_execution import AgentExecution
@@ -405,3 +407,151 @@ def fetch_agent_config_from_template(agent_template_id: int,
     template_config_dict["agent_workflow"] = agent_workflow.name
 
     return template_config_dict
+
+@router.post("/publish_template/agent_id/{agent_id}", status_code=201)
+def publish_template_without_execution(agent_execution_details: AgentRunIn, agent_id: str, organisation=Depends(get_user_organisation), user=Depends(get_current_user)):
+    
+    if agent_id == 'undefined':
+        raise HTTPException(status_code = 404, detail = "Agent Execution Id undefined")
+    
+    agent = db.session.query(Agent).filter(Agent.id == agent_id).first()
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    agent_template = AgentTemplate(name=agent.name, description=agent.description,
+                                   agent_workflow_id=agent.agent_workflow_id,
+                                   organisation_id=organisation.id)
+    db.session.add(agent_template)
+    db.session.commit()
+
+    agent_execution_configs = {
+        "goal": agent_execution_details.goal,
+        "instruction": agent_execution_details.instruction,
+        "constraints": agent_execution_details.constraints,
+        "toolkits": agent_execution_details.toolkits,
+        "exit": agent_execution_details.exit,
+        "tools": agent_execution_details.tools,
+        "iteration_interval": agent_execution_details.iteration_interval,
+        "model": agent_execution_details.model,
+        "permission_type": agent_execution_details.permission_type,
+        "LTM_DB": agent_execution_details.LTM_DB,
+        "max_iterations": agent_execution_details.max_iterations,
+        "user_timezone": agent_execution_details.user_timezone,
+        "knowledge": agent_execution_details.knowledge
+    }
+
+    for key, value in agent_execution_configs.items():
+        if key == "tools":
+            value = Tool.convert_tool_ids_to_names(db, value)
+        agent_template_config = AgentTemplateConfig(agent_template_id=agent_template.id, key=key, value=str(value))
+        db.session.add(agent_template_config)
+
+    agent_template_configs = [
+    AgentTemplateConfig(agent_template_id=agent_template.id, key="status", value="UNDER REVIEW"),
+    AgentTemplateConfig(agent_template_id=agent_template.id, key="Contributor Name", value=user.name),
+    AgentTemplateConfig(agent_template_id=agent_template.id, key="Contributor Email", value=user.email)]
+    db.session.add_all(agent_template_configs)
+
+    db.session.commit()
+    db.session.flush()
+    return agent_template.to_dict()
+
+@router.post("/publish_template/agent_execution_id/{agent_execution_id}", status_code=201)
+def publish_template(agent_execution_id: str,
+                           organisation=Depends(get_user_organisation),
+                           user=Depends(get_current_user)):
+    """
+    Publish an agent execution as a template.
+
+    Args:
+        agent_execution_id (str): The ID of the agent execution to save as a template.
+        organisation (Depends): Dependency to get the user organisation.
+        user (Depends): Dependency to get the user.
+
+    Returns:
+        dict: The saved agent template.
+
+    Raises:
+        HTTPException (status_code=404): If the agent or agent execution configurations are not found.
+    """
+    if agent_execution_id == 'undefined':
+        raise HTTPException(status_code = 404, detail = "Agent Execution Id undefined")
+
+    agent_executions = AgentExecution.get_agent_execution_from_id(db.session, agent_execution_id)
+    if agent_executions is None:
+        raise HTTPException(status_code = 404, detail = "Agent Execution not found")
+    agent_id = agent_executions.agent_id
+
+    agent = db.session.query(Agent).filter(Agent.id == agent_id).first()
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    agent_execution_configurations = db.session.query(AgentExecutionConfiguration).filter(AgentExecutionConfiguration.agent_execution_id == agent_execution_id).all()
+    if not agent_execution_configurations:
+        raise HTTPException(status_code=404, detail="Agent execution configurations not found")
+
+    agent_template = AgentTemplate(name=agent.name, description=agent.description,
+                                   agent_workflow_id=agent.agent_workflow_id,
+                                   organisation_id=organisation.id)
+    db.session.add(agent_template)
+    db.session.commit()
+
+    main_keys = AgentTemplate.main_keys()
+    for agent_execution_configuration in agent_execution_configurations:
+        config_value = agent_execution_configuration.value
+        if agent_execution_configuration.key not in main_keys:
+            continue
+        if agent_execution_configuration.key == "tools":
+            config_value = str(Tool.convert_tool_ids_to_names(db, eval(agent_execution_configuration.value)))
+        agent_template_config = AgentTemplateConfig(agent_template_id=agent_template.id, key=agent_execution_configuration.key,
+                                                    value=config_value)
+        db.session.add(agent_template_config)
+
+    agent_template_configs = [
+    AgentTemplateConfig(agent_template_id=agent_template.id, key="status", value="UNDER REVIEW"),
+    AgentTemplateConfig(agent_template_id=agent_template.id, key="Contributor Name", value=user.name),
+    AgentTemplateConfig(agent_template_id=agent_template.id, key="Contributor Email", value=user.email)]
+    db.session.add_all(agent_template_configs)
+
+    db.session.commit()
+    db.session.flush()
+    return agent_template.to_dict()
+
+@router.get("/process_template/template_id/{template_id}", status_code=200)
+def process_published_template(template_id: int, action: str = Query(..., title="Action"), organisation=Depends(get_user_organisation)):
+
+    if action == "approve":
+        template = db.session.query(AgentTemplate).filter(AgentTemplate.id == template_id, AgentTemplate.organisation_id == organisation.id).first()
+        if not template:
+            raise HTTPException(status_code=404, detail="Could not find template")
+        
+        template_configs = db.session.query(AgentTemplateConfig).filter(AgentTemplateConfig.agent_template_id == template_id).all()
+        if not template_configs:
+            raise HTTPException(status_code=404, detail="Could not find agent template config")
+        
+        template.organisation_id = int(get_config("MARKETPLACE_ORGANISATION_ID"))
+        for template_config in template_configs:
+            if template_config.key == "status":
+                template_config.value = "APPROVED"
+        
+        db.session.commit()
+        return {"Message": "Template approved"}
+
+    elif action == "reject":
+        template = db.session.query(AgentTemplate).filter(AgentTemplate.id == template_id, AgentTemplate.organisation_id == organisation.id).first()
+        if not template:
+            raise HTTPException(status_code=404, detail="Could not find template")
+        
+        template_configs = db.session.query(AgentTemplateConfig).filter(AgentTemplateConfig.agent_template_id == template_id).all()
+        if not template_configs:
+            raise HTTPException(status_code=404, detail="Could not find agent template config")
+        
+        for template_config in template_configs:
+            if template_config.key == "status":
+                template_config.value = "REJECTED"
+
+        db.session.commit()
+        return {"Message": "Template rejected"}
+    
+    else:
+        raise HTTPException(status_code=404, detail="Invalid action")
